@@ -143,7 +143,7 @@ function setup() {
   layerSliderTip = createP('View Layer:')
   layerSliderTip.position(705, 70)
 
-  timeLayersAmount = createSlider(10, 10)
+  timeLayersAmount = createSlider(10, 20)
   timeLayersAmount.position(700, 150)
   timeLayersAmount.value(10)
   timeLayersAmount.size(80)
@@ -162,11 +162,12 @@ function setup() {
   configTip = createP('Push \'c\' to show/hide config')
   configTip.position(701, 220)
   
-  randomCells(0.3)
+  randomCells(0.25)
   // console.log(gameBoard)
 }
 
 function draw() {
+  checkInitialization();
   background(255);
   displayAll = displayAllCheckbox.checked();
   layerSliderText.input(updateViewLayerSlider);
@@ -174,10 +175,14 @@ function draw() {
   currentTimeStep = layerSlider.value();
   timeLayersAmountText.input(updateTimeLayerSlider);
   timeLayersAmount.input(updateTimeLayerTextBox);
-  timeLayers = timeLayersAmount.value()
   renderBoard()
   drawConfigBox()
   applyCellRules()
+  timeLayers = timeLayersAmount.value()
+  layerSlider.elt.max = timeLayers;
+  if (layerSlider.value() > timeLayers) {
+    layerSlider.value(timeLayers);
+  }
   // stepTime();
 }
 
@@ -230,50 +235,22 @@ function applyCellRules(){
         if(liveNeighbors >= 4){
           cellState.die()
           gameBoard[y][x][z] = cellState
-        }
+        }           
       }
     }
   }
 }
 
-function countLiveNeighbors(y, x, z){
-  let liveNeighbors = 0
-  if(!(y - 1 < 0)) {
-    checkCell = gameBoard[y-1][x][z]
-    if(checkCell.livingState) {
-      liveNeighbors++;
-    }
-  }
-  if(!(y + 1 > dims-1)){
-    checkCell = gameBoard[y+1][x][z]
-    if(checkCell.livingState) {
-      liveNeighbors++;
-    }
-  }
-  if(!(x - 1 < 0)) {
-    checkCell = gameBoard[y][x-1][z]
-    if(checkCell.livingState) {
-      liveNeighbors++;
-    }
-  }
-  if(!(x + 1 > dims-1)){
-    checkCell = gameBoard[y][x+1][z]
-    if(checkCell.livingState) {
-      liveNeighbors++;
-    }
-  }
-  if(!(z - 1 < 0)) {
-    checkCell = gameBoard[y][x][z-1]
-    if(checkCell.livingState) {
-      liveNeighbors++;
-    }
-  }
-  if(!(z + 1 > timeLayers-1)){
-    checkCell = gameBoard[y][x][z+1]
-    if(checkCell.livingState) {
-      liveNeighbors++;
-    }
-  }
+function countLiveNeighbors(y, x, z) {
+  let liveNeighbors = 0;
+  
+  if (y - 1 >= 0 && gameBoard[y - 1][x][z] && gameBoard[y - 1][x][z].livingState) liveNeighbors++;
+  if (y + 1 < dims && gameBoard[y + 1][x][z] && gameBoard[y + 1][x][z].livingState) liveNeighbors++;
+  if (x - 1 >= 0 && gameBoard[y][x - 1][z] && gameBoard[y][x - 1][z].livingState) liveNeighbors++;
+  if (x + 1 < dims && gameBoard[y][x + 1][z] && gameBoard[y][x + 1][z].livingState) liveNeighbors++;
+  if (z - 1 >= 0 && gameBoard[y][x][z - 1] && gameBoard[y][x][z - 1].livingState) liveNeighbors++;
+  if (z + 1 < timeLayers && gameBoard[y][x][z + 1] && gameBoard[y][x][z + 1].livingState) liveNeighbors++;
+  
   return liveNeighbors;
 }
 
@@ -329,10 +306,33 @@ function updateTimeLayerSlider(){
     timeLayersAmountText.value(0)
     timeLayersAmount.value(timeLayersAmountText.value())
   }
+  timeLayers = timeLayersAmount.value();
+  for (let y = 0; y < dims; y++) {
+    for (let x = 0; x < dims; x++) {
+      while (gameBoard[y][x].length < timeLayers) {
+        gameBoard[y][x].push(new Cell(false, [255, 255, 255]));
+      }
+      while (gameBoard[y][x].length > timeLayers) {
+        gameBoard[y][x].shift();
+      }
+    }
+  }
 }
 
 function updateTimeLayerTextBox(){
   timeLayersAmountText.value(timeLayersAmount.value())
+}
+
+function checkInitialization() {
+  for (let y = 0; y < dims; y++) {
+    for (let x = 0; x < dims; x++) {
+      for (let z = 0; z < timeLayers; z++) {
+        if (!(gameBoard[y][x][z] instanceof Cell)) {
+          gameBoard[y][x][z] = new Cell(false, [255, 255, 255]);
+        }
+      }
+    }
+  }
 }
 
 function keyPressed(e){
