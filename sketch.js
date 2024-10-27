@@ -224,6 +224,9 @@ function toggleConfig(){
     timeLayersAmountTip.show()
     displayAllCheckbox.show()
     displayAllTip.show()
+    updateTimerSlider.show()
+    updateTimerText.show()
+    updateTimerTip.show()
     drawConfigBox()
   } else {
     layerSlider.hide()
@@ -234,6 +237,9 @@ function toggleConfig(){
     timeLayersAmountTip.hide()
     displayAllCheckbox.hide()
     displayAllTip.hide()
+    updateTimerSlider.hide()
+    updateTimerText.hide()
+    updateTimerTip.hide()
     configTip.hide()
   }
 }
@@ -255,7 +261,7 @@ function applyCellRules(){
         if(liveNeighbors >= 4){
           cellState.die()
           gameBoard[y][x][z] = cellState
-        }           
+        }      
       }
     }
   }
