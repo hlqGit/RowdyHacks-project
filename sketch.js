@@ -17,9 +17,12 @@ let updateTimerText;
 let displayAll = false;
 let displayAllCheckbox;
 
-let paused = false;
-let config = true;
+let drawing;
 
+let paused = false;
+let looping = false;
+let loopVar = 1;
+let backwards = false;
 /*
 [
  [[], [], [], ...],
@@ -94,9 +97,9 @@ function randomCells(odds){
     for(var x = 0; x < dims; x++){
       for(var z = 0; z < timeLayers; z++){
         if(odds > Math.random()){
-          gameBoard[y][x][z] = new Cell(true, gradient([255,0,0], [0, 255, 255], timeLayers, currentTimeStep));
+          gameBoard[y][x][z] = new Cell(true, gradient([255,0,0], [0, 0, 255], timeLayers, z));
         } else {
-          gameBoard[y][x][z] = new Cell(false, 255, timeLayers, currentTimeStep)
+          gameBoard[y][x][z] = new Cell(false, gradient([255,0,0], [0, 0, 255], timeLayers, z))
         }
       }
     }
@@ -104,6 +107,7 @@ function randomCells(odds){
 }
 
 function renderBoard(){
+  background(255);
   for(var y = 0; y < dims; y++){
     for(var x = 0; x < dims; x++){
       var snappedX = cellSize * x;
@@ -112,14 +116,17 @@ function renderBoard(){
         for(var z = 0; z < timeLayers-1; z++){
           testCell = gameBoard[y][x][z]
           if(testCell.livingState){
-            fill(gradient([255,0,0], [0, 0, 255], timeLayers, z))
+            // fill(gradient([255,0,0], [0, 0, 255], timeLayers, z))
+            fill(testCell.cellColor)
             rect(snappedX, snappedY, cellSize, cellSize)
           }
         }
       } else {
         testCell = gameBoard[y][x][currentTimeStep-1]
         if(testCell.livingState){
-          fill(gradient([255,0,0], [0, 0, 255], timeLayers, currentTimeStep))
+          // console.log(gameBoard[y][x][currentTimeStep].color)
+          // fill(gradient([255,0,0], [0, 0, 255], timeLayers, currentTimeStep))
+          fill(testCell.cellColor)
           rect(snappedX, snappedY, cellSize, cellSize);
         }  else { // Uncomment else for white cells to have a border. *******
           // fill(255)
@@ -131,59 +138,59 @@ function renderBoard(){
 }
 
 function setup() {
-  createCanvas(displaySize, displaySize);
+  let canvas = createCanvas(displaySize, displaySize);
+  canvas.parent('container');
+  background(255);
 
   // Initializes config menu: View Layer Slider.
   layerSlider = createSlider(1, 10, 1)
-  layerSlider.position(700, 100)
-  layerSlider.size(80)
+  layerSlider.position(935, 525)
+  layerSlider.size(150)
   layerSliderText = createInput()
   layerSliderText.size(25)
-  layerSliderText.position(795, 100)
+  layerSliderText.position(1100, 525)
   layerSliderText.value(layerSlider.value())
-  layerSliderTip = createP('View Layer:')
-  layerSliderTip.position(705, 70)
 
   // Initializes config menu: Z-Axis Layers Slider.
   timeLayersAmount = createSlider(10, 20, 10)
-  timeLayersAmount.position(700, 150)
-  timeLayersAmount.size(80)
+  timeLayersAmount.position(935, 600)
+  timeLayersAmount.size(150)
   timeLayersAmountText = createInput()
   timeLayersAmountText.size(25)
-  timeLayersAmountText.position(795, 150)
+  timeLayersAmountText.position(1100, 600)
   timeLayersAmountText.value(timeLayersAmount.value())
-  timeLayersAmountTip = createP('Amount of Z-Axis layers:')
-  timeLayersAmountTip.position(705, 120)
 
   // Initializes config menu: Updates Per Second Slider.
   updateTimerSlider = createSlider(0.25, 5, 1, 0.25)
-  updateTimerSlider.position(700, 200)
-  updateTimerSlider.size(80)
+  updateTimerSlider.position(935, 675)
+  updateTimerSlider.size(150)
   updateTimerText = createInput()
   updateTimerText.size(25)
-  updateTimerText.position(795, 200)
+  updateTimerText.position(1100, 675)
   updateTimerText.value(updateTimerSlider.value())
-  updateTimerTip = createP('Update Speed (Per Second):')
-  updateTimerTip.position(700, 170)
   
   // Initializes config menu: Display All Checkbox.
   displayAllCheckbox = createCheckbox();
-  displayAllCheckbox.position(803, 232);
-  displayAllTip = createP('Display all layers?')
-  displayAllTip.position(705, 223)
-
-  // Initializes config menu: Tip For Hiding Config.
-  configTip = createP('Push \'c\' to show/hide config')
-  configTip.position(701, 250)
+  displayAllCheckbox.position(1100, 717);
+  displayAllCheckbox.checked(false);
   
   // Initializes each layer with random cells.
   randomCells(0.25)
 }
 
+setInterval(backgroundTasks, 1000/60);
+
 function draw() {
   checkInitialization();
-  background(255);
 
+  // renderBoard() // Draws each live cell
+  applyCellRules() // Runs logic rules for cells & updates their values
+  verifyTimeLayers() // Makes sure (current z-axis layer) < (total z-axis layers)
+  // stepTime(); to be implemented?
+  bounceLoop()
+}
+
+function backgroundTasks(){
   displayAll = displayAllCheckbox.checked();
 
   // .input methods: Runs if slider/textbox value has changed.
@@ -198,12 +205,26 @@ function draw() {
   // Switches framerate to its slider value
   timeStep = updateTimerSlider.value();
   frameRate(timeStep);
+  renderBoard()
+  userDraw()
+}
 
-  renderBoard() // Draws each live cell
-  drawConfigBox() // Overlay config box over board
-  applyCellRules() // Runs logic rules for cells & updates their values
-  verifyTimeLayers() // Makes sure (current z-axis layer) < (total z-axis layers)
-  // stepTime(); to be implemented?
+function bounceLoop(){
+  if(looping){
+    layerSlider.value(loopVar)
+    layerSliderText.value(loopVar)
+    if(!backwards){
+      loopVar++;
+    } else {
+      loopVar--;
+    }
+    if(loopVar > timeLayers-1){
+      backwards = true;
+    }
+    if(loopVar < 2){
+      backwards = false;
+    }
+  }
 }
 
 // Makes sure (current z-axis layer) < (total z-axis layers)
@@ -225,42 +246,11 @@ function drawConfigBox(){
   }
 }
 
-function toggleConfig(){
-  config = !config
-  if(config){
-    layerSlider.show()
-    layerSliderText.show()
-    layerSliderTip.show()
-    timeLayersAmount.show()
-    timeLayersAmountText.show()
-    timeLayersAmountTip.show()
-    displayAllCheckbox.show()
-    displayAllTip.show()
-    updateTimerSlider.show()
-    updateTimerText.show()
-    updateTimerTip.show()
-    drawConfigBox()
-  } else {
-    layerSlider.hide()
-    layerSliderText.hide()
-    layerSliderTip.hide()
-    timeLayersAmount.hide()
-    timeLayersAmountText.hide()
-    timeLayersAmountTip.hide()
-    displayAllCheckbox.hide()
-    displayAllTip.hide()
-    updateTimerSlider.hide()
-    updateTimerText.hide()
-    updateTimerTip.hide()
-    configTip.hide()
-  }
-}
-
 /*
 Add new cell rules here, default rules already implemented. If needed,
 They can be changed later too depending on new rules implemented.
 */
-
+// RULESET 1 - MAKES COOL 3D SHAPES
 function applyCellRules(){
   for(y = 0; y < dims; y++){
     for(x = 0; x < dims; x++) {
@@ -271,7 +261,7 @@ function applyCellRules(){
           cellState.die()
           gameBoard[y][x][z] = cellState
         }
-        if(liveNeighbors == 9 || liveNeighbors == 10){
+        if(liveNeighbors >= 9 && liveNeighbors <= 10){
           cellState.resurrect()
           gameBoard[y][x][z] = cellState
         }
@@ -283,30 +273,6 @@ function applyCellRules(){
     }
   }
 }
-
-// RULESET 1 - MAKES COOL 3D SHAPES
-// function applyCellRules(){
-//   for(y = 0; y < dims; y++){
-//     for(x = 0; x < dims; x++) {
-//       for(z = 0; z < timeLayers; z++){
-//         liveNeighbors = countLiveNeighbors(y, x, z)
-//         cellState = gameBoard[y][x][z]
-//         if(liveNeighbors < 6) {
-//           cellState.die()
-//           gameBoard[y][x][z] = cellState
-//         }
-//         if(liveNeighbors >= 9 && liveNeighbors <= 10){
-//           cellState.resurrect()
-//           gameBoard[y][x][z] = cellState
-//         }
-//         if(liveNeighbors >= 11){
-//           cellState.die()
-//           gameBoard[y][x][z] = cellState
-//         }      
-//       }
-//     }
-//   }
-// }
 
 // Returns how many (out of 26) neighbors are living
 function countLiveNeighbors(y, x, z) {
@@ -394,6 +360,24 @@ function checkInitialization() {
   }
 }
 
+function userDraw(){
+  if(mouseIsPressed && mouseX >= 0 && mouseX <= displaySize && mouseY >= 0 && mouseY <= displaySize){
+    var cellState = gameBoard[Math.floor(mouseY/cellSize)][Math.floor(mouseX/cellSize)][currentTimeStep-1];
+
+    if(cellState.livingState){
+      cellState.die();
+    }else{
+      cellState.resurrect();
+    }
+
+    gameBoard[Math.floor(mouseY/cellSize)][Math.floor(mouseX/cellSize)][currentTimeStep-1] = cellState;
+
+    // rect(mouseX, mouseY, 10, 10)
+    console.log(Math.floor(mouseY/cellSize), Math.floor(mouseX/cellSize), gameBoard[Math.floor(mouseY/cellSize)][Math.floor(mouseX/cellSize)][currentTimeStep-1])
+    // renderBoard()
+  }
+}
+
 // listens for pause (space) and toggle config (c)
 function keyPressed(e){
   if(keyCode == 32){
@@ -404,7 +388,7 @@ function keyPressed(e){
       loop();
     }
   }
-  if(key === 'c') {
-    toggleConfig()
+  if(key === 'l') {
+    looping = !looping
   }
 }

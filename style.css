@@ -1,3 +1,8 @@
+@font-face {
+  font-family: 'BTTF';
+  src: url('fonts/BTTF.ttf');
+}
+
 html, body {
   margin: 0;
   padding: 0;
@@ -5,10 +10,57 @@ html, body {
 
 canvas {
   display: block;
+  margin: 0;
+  order: 1;
 }
 
 body {
   color: white;
   font-size: 12px;
   background-color: #616161;
+}
+
+.container {
+  display: flex;
+  align-items: flex-start;
+  background-color: #616161;
+}
+
+.text-area {
+  width: 400px;
+  padding-left: 40px;
+  order: 2;
+}
+
+h1 {
+  font-family: 'BTTF';
+  font-size: 60px;
+  color: black;
+}
+
+h2 {
+  font-family: 'BTTF';
+  font-size: 35px;
+  color: lightgray;
+}
+
+.ctrl {
+  font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 20px;
+  color: white;
+}
+
+.cfg {
+  padding-top: 35px;
+  font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 18px;
+
+}
+
+#top {
+  padding-top: 0;
+}
+
+#config {
+  padding-top: 35px;
 }
