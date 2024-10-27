@@ -11,6 +11,9 @@ let layerSliderText;
 let timeLayersAmount;
 let timeLayersAmountText;
 
+let updateTimerSlider;
+let updateTimerText;
+
 let displayAll = false;
 let displayAllCheckbox;
 
@@ -132,8 +135,7 @@ function setup() {
   createCanvas(displaySize, displaySize);
   console.log(dims)
   frameRate(timeStep);
-  layerSlider = createSlider(1, 10)
-  layerSlider.value(0)
+  layerSlider = createSlider(1, 10, 1)
   layerSlider.position(700, 100)
   layerSlider.size(80)
   layerSliderText = createInput()
@@ -143,9 +145,8 @@ function setup() {
   layerSliderTip = createP('View Layer:')
   layerSliderTip.position(705, 70)
 
-  timeLayersAmount = createSlider(10, 20)
+  timeLayersAmount = createSlider(10, 20, 10)
   timeLayersAmount.position(700, 150)
-  timeLayersAmount.value(10)
   timeLayersAmount.size(80)
   timeLayersAmountText = createInput()
   timeLayersAmountText.size(25)
@@ -153,14 +154,24 @@ function setup() {
   timeLayersAmountText.value(timeLayersAmount.value())
   timeLayersAmountTip = createP('Amount of Z-Axis layers:')
   timeLayersAmountTip.position(705, 120)
+
+  updateTimerSlider = createSlider(0.5, 5, 1, 0.5)
+  updateTimerSlider.position(700, 200)
+  updateTimerSlider.size(80)
+  updateTimerText = createInput()
+  updateTimerText.size(25)
+  updateTimerText.position(795, 200)
+  updateTimerText.value(updateTimerSlider.value())
+  updateTimerTip = createP('Update Speed (Per Second):')
+  updateTimerTip.position(700, 170)
   
   displayAllCheckbox = createCheckbox();
-  displayAllCheckbox.position(803, 190);
+  displayAllCheckbox.position(803, 232);
   displayAllTip = createP('Display all layers?')
-  displayAllTip.position(705, 180)
+  displayAllTip.position(705, 223)
 
   configTip = createP('Push \'c\' to show/hide config')
-  configTip.position(701, 220)
+  configTip.position(701, 250)
   
   randomCells(0.25)
   // console.log(gameBoard)
@@ -175,21 +186,30 @@ function draw() {
   currentTimeStep = layerSlider.value();
   timeLayersAmountText.input(updateTimeLayerSlider);
   timeLayersAmount.input(updateTimeLayerTextBox);
+  updateTimerText.input(updateUpdateTimerSlider);
+  updateTimerSlider.input(updateUpdateTimerText);
+  timeStep = updateTimerSlider.value();
+  frameRate(timeStep);
+
   renderBoard()
   drawConfigBox()
   applyCellRules()
+  verifyTimeLayers()
+  // stepTime();
+}
+
+function verifyTimeLayers(){
   timeLayers = timeLayersAmount.value()
   layerSlider.elt.max = timeLayers;
   if (layerSlider.value() > timeLayers) {
     layerSlider.value(timeLayers);
   }
-  // stepTime();
 }
 
 function drawConfigBox(){
   if(config){
     fill(0, 220);
-    rect(690,65,155,200);
+    rect(690,65,155,215);
   }
 }
 
@@ -321,6 +341,36 @@ function updateTimeLayerSlider(){
 
 function updateTimeLayerTextBox(){
   timeLayersAmountText.value(timeLayersAmount.value())
+}
+
+function updateUpdateTimerSlider(){
+  let inputVal = updateTimerText.value()
+  let valCheck = inputVal.charCodeAt(inputVal.length -1)
+  if(inputVal.charCodeAt(0) == 48) {
+    updateTimerText.value(inputVal.substring(1))
+  }
+
+  // if it isn't a number, delete it
+  if(!(valCheck > 47 && valCheck < 58)) {
+    updateTimerText.value(inputVal.substring(0, inputVal.length-1))
+  }
+  // if it's greater than 90, it isn't
+  if(inputVal > 5) {
+    updateTimerSlider.value(5)
+    updateTimerText.value(5)
+  } else {
+    updateTimerSlider.value(updateTimerText.value())
+  }
+  inputVal = updateTimerText.value()
+  if(inputVal == "") {
+    updateTimerText.value(0)
+    updateTimerSlider.value(updateTimerText.value())
+  }
+  timeStep = updateTimerSlider.value()
+}
+
+function updateUpdateTimerText(){
+  updateTimerText.value(updateTimerSlider.value())
 }
 
 function checkInitialization() {
