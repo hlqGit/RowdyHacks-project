@@ -60,24 +60,42 @@ class Cell {
   get cellColor(){
     return this.color
   }
-}
 
-function gradient(startColor, endColor, steps, position) {
-  if (position < 0 || position >= steps) {
-    throw new Error("Position must be within the range of steps");
+  die(){
+    this.living = false
   }
 
-  // Calculate the step increments for each RGB channel
-  const stepR = (endColor[0] - startColor[0]) / (steps - 1);
-  const stepG = (endColor[1] - startColor[1]) / (steps - 1);
-  const stepB = (endColor[2] - startColor[2]) / (steps - 1);
+  resurrect(){
+    this.living = true
+  }
+}
 
-  // Calculate color at the specified position
-  const r = Math.round(startColor[0] + stepR * position);
-  const g = Math.round(startColor[1] + stepG * position);
-  const b = Math.round(startColor[2] + stepB * position);
+// function gradient(startColor, endColor, steps, position) {
+//   if (position < 0 || position >= steps) {
+//     throw new Error("Position must be within the range of steps");
+//   }
 
-  return `rgb(${r}, ${g}, ${b})`;
+//   // Calculate the step increments for each RGB channel
+//   const stepR = (endColor[0] - startColor[0]) / (steps - 1);
+//   const stepG = (endColor[1] - startColor[1]) / (steps - 1);
+//   const stepB = (endColor[2] - startColor[2]) / (steps - 1);
+
+//   // Calculate color at the specified position
+//   const r = Math.round(startColor[0] + stepR * position);
+//   const g = Math.round(startColor[1] + stepG * position);
+//   const b = Math.round(startColor[2] + stepB * position);
+
+//   return `rgb(${r}, ${g}, ${b})`;
+// }
+
+function gradient(startColor, endColor, totalGradientSteps, currentStep) {
+  // Calculate the interpolated color for each component
+  const r = Math.floor(startColor[0] + ((endColor[0] - startColor[0]) * currentStep) / totalGradientSteps);
+  const g = Math.floor(startColor[1] + ((endColor[1] - startColor[1]) * currentStep) / totalGradientSteps);
+  const b = Math.floor(startColor[2] + ((endColor[2] - startColor[2]) * currentStep) / totalGradientSteps);
+
+  // Return the color as an array
+  return [r, g, b];
 }
 
 // input, odds must be larger than what Math.random returns in order for a cell to be placed
@@ -108,11 +126,11 @@ function renderBoard(){
             rect(snappedX, snappedY, cellSize, cellSize);
           }
         }
-      }else{
+      } else {
         testCell = gameBoard[y][x][currentTimeStep-1]
         if(testCell.livingState){
           //console.log(x, y, currentTimeStep, gameBoard[y][x][currentTimeStep])
-          fill(gradient([255,0,0], [255, 0, 77], dims, currentTimeStep))
+          fill(gradient([255,0,0], [0, 0, 255], timeLayers, currentTimeStep))
           rect(snappedX, snappedY, cellSize, cellSize);
         }  else {
           //console.log(x, y, currentTimeStep, gameBoard[y][x][currentTimeStep])
@@ -147,7 +165,7 @@ function setup() {
   console.log(gameBoard[0])
   displayAllCheckbox = createCheckbox();
   displayAllCheckbox.position(700, 200);
-  randomCells(0.5)
+  randomCells(0.3)
   // console.log(gameBoard)
 }
 
@@ -161,7 +179,72 @@ function draw() {
   timeLayersAmount.input(updateTimeLayerTextBox);
   timeLayers = timeLayersAmount.value()
   renderBoard()
+  applyCellRules()
   // stepTime();
+}
+
+function applyCellRules(){
+  for(y = 0; y < dims; y++){
+    for(x = 0; x < dims; x++) {
+      for(z = 0; z < timeLayers; z++){
+        liveNeighbors = countLiveNeighbors(y, x, z)
+        cellState = gameBoard[y][x][z]
+        if(liveNeighbors < 1) {
+          cellState.die()
+          gameBoard[y][x][z] = cellState
+        }
+        if(liveNeighbors > 2 && liveNeighbors < 4){
+          cellState.resurrect()
+          gameBoard[y][x][z] = cellState
+        }
+        if(liveNeighbors >= 4){
+          cellState.die()
+          gameBoard[y][x][z] = cellState
+        }
+      }
+    }
+  }
+}
+
+function countLiveNeighbors(y, x, z){
+  let liveNeighbors = 0
+  if(!(y - 1 < 0)) {
+    checkCell = gameBoard[y-1][x][z]
+    if(checkCell.livingState) {
+      liveNeighbors++;
+    }
+  }
+  if(!(y + 1 > dims-1)){
+    checkCell = gameBoard[y+1][x][z]
+    if(checkCell.livingState) {
+      liveNeighbors++;
+    }
+  }
+  if(!(x - 1 < 0)) {
+    checkCell = gameBoard[y][x-1][z]
+    if(checkCell.livingState) {
+      liveNeighbors++;
+    }
+  }
+  if(!(x + 1 > dims-1)){
+    checkCell = gameBoard[y][x+1][z]
+    if(checkCell.livingState) {
+      liveNeighbors++;
+    }
+  }
+  if(!(z - 1 < 0)) {
+    checkCell = gameBoard[y][x][z-1]
+    if(checkCell.livingState) {
+      liveNeighbors++;
+    }
+  }
+  if(!(z + 1 > timeLayers-1)){
+    checkCell = gameBoard[y][x][z+1]
+    if(checkCell.livingState) {
+      liveNeighbors++;
+    }
+  }
+  return liveNeighbors;
 }
 
 function updateViewLayerSlider(){
