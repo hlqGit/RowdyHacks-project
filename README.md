@@ -1,4 +1,6 @@
 # Temporal Layers 
+[Play here!](https://hlqgit.github.io/RowdyHacks-project/)
+
 A cellular automaton game inspired by [Conway's Game of Life](https://playgameoflife.com/). where each cell (square) has parameters defined for whether it 'lives', 'dies', or 'resurrects'. 
 However, this version comes with a twist: A third dimension! Traditionally, cells only interact with ones that are directly above, below, to the left, and to the right of itself. 
 In Temporal Layers, they are able to interact with the cells behind and in front of them, represented by different layers!
