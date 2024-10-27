@@ -156,7 +156,7 @@ function setup() {
   timeLayersAmountTip.position(705, 120)
 
   // Initializes config menu: Updates Per Second Slider.
-  updateTimerSlider = createSlider(0.5, 5, 1, 0.5)
+  updateTimerSlider = createSlider(0.25, 5, 1, 0.25)
   updateTimerSlider.position(700, 200)
   updateTimerSlider.size(80)
   updateTimerText = createInput()
@@ -260,21 +260,22 @@ function toggleConfig(){
 Add new cell rules here, default rules already implemented. If needed,
 They can be changed later too depending on new rules implemented.
 */
+
 function applyCellRules(){
   for(y = 0; y < dims; y++){
     for(x = 0; x < dims; x++) {
       for(z = 0; z < timeLayers; z++){
         liveNeighbors = countLiveNeighbors(y, x, z)
         cellState = gameBoard[y][x][z]
-        if(liveNeighbors < 1) {
+        if(liveNeighbors < 6) {
           cellState.die()
           gameBoard[y][x][z] = cellState
         }
-        if(liveNeighbors > 2 && liveNeighbors < 4){
+        if(liveNeighbors == 9 || liveNeighbors == 10){
           cellState.resurrect()
           gameBoard[y][x][z] = cellState
         }
-        if(liveNeighbors >= 4){
+        if(liveNeighbors >= 11){
           cellState.die()
           gameBoard[y][x][z] = cellState
         }      
@@ -283,17 +284,52 @@ function applyCellRules(){
   }
 }
 
-// Returns how many neighbors (not including diagonals) are living
+// RULESET 1 - MAKES COOL 3D SHAPES
+// function applyCellRules(){
+//   for(y = 0; y < dims; y++){
+//     for(x = 0; x < dims; x++) {
+//       for(z = 0; z < timeLayers; z++){
+//         liveNeighbors = countLiveNeighbors(y, x, z)
+//         cellState = gameBoard[y][x][z]
+//         if(liveNeighbors < 6) {
+//           cellState.die()
+//           gameBoard[y][x][z] = cellState
+//         }
+//         if(liveNeighbors >= 9 && liveNeighbors <= 10){
+//           cellState.resurrect()
+//           gameBoard[y][x][z] = cellState
+//         }
+//         if(liveNeighbors >= 11){
+//           cellState.die()
+//           gameBoard[y][x][z] = cellState
+//         }      
+//       }
+//     }
+//   }
+// }
+
+// Returns how many (out of 26) neighbors are living
 function countLiveNeighbors(y, x, z) {
   let liveNeighbors = 0;
-  
-  if (y - 1 >= 0 && gameBoard[y - 1][x][z] && gameBoard[y - 1][x][z].livingState) liveNeighbors++;
-  if (y + 1 < dims && gameBoard[y + 1][x][z] && gameBoard[y + 1][x][z].livingState) liveNeighbors++;
-  if (x - 1 >= 0 && gameBoard[y][x - 1][z] && gameBoard[y][x - 1][z].livingState) liveNeighbors++;
-  if (x + 1 < dims && gameBoard[y][x + 1][z] && gameBoard[y][x + 1][z].livingState) liveNeighbors++;
-  if (z - 1 >= 0 && gameBoard[y][x][z - 1] && gameBoard[y][x][z - 1].livingState) liveNeighbors++;
-  if (z + 1 < timeLayers && gameBoard[y][x][z + 1] && gameBoard[y][x][z + 1].livingState) liveNeighbors++;
-  
+  for (let dy = -1; dy <= 1; dy++){
+    for (let dx = -1; dx <= 1; dx++){
+      for (let dz = -1; dz <= 1; dz++){
+        if (dy === 0 && dx === 0 && dz === 0){
+          continue;
+        } 
+
+        let ny = y + dy;
+        let nx = x + dx;
+        let nz = z + dz;
+
+        if (ny >= 0 && ny < dims && nx >= 0 && nx < dims && nz >= 0 && nz < timeLayers){
+          if (gameBoard[ny][nx][nz] && gameBoard[ny][nx][nz].livingState){
+            liveNeighbors++;
+          }
+        }
+      }
+    }
+  }
   return liveNeighbors;
 }
 
