@@ -15,6 +15,7 @@ let displayAll = false;
 let displayAllCheckbox;
 
 let paused = false;
+let config = true;
 
 /*
 [
@@ -70,24 +71,6 @@ class Cell {
   }
 }
 
-// function gradient(startColor, endColor, steps, position) {
-//   if (position < 0 || position >= steps) {
-//     throw new Error("Position must be within the range of steps");
-//   }
-
-//   // Calculate the step increments for each RGB channel
-//   const stepR = (endColor[0] - startColor[0]) / (steps - 1);
-//   const stepG = (endColor[1] - startColor[1]) / (steps - 1);
-//   const stepB = (endColor[2] - startColor[2]) / (steps - 1);
-
-//   // Calculate color at the specified position
-//   const r = Math.round(startColor[0] + stepR * position);
-//   const g = Math.round(startColor[1] + stepG * position);
-//   const b = Math.round(startColor[2] + stepB * position);
-
-//   return `rgb(${r}, ${g}, ${b})`;
-// }
-
 function gradient(startColor, endColor, totalGradientSteps, currentStep) {
   // Calculate the interpolated color for each component
   const r = Math.floor(startColor[0] + ((endColor[0] - startColor[0]) * currentStep) / totalGradientSteps);
@@ -123,7 +106,10 @@ function renderBoard(){
           testCell = gameBoard[y][x][currentTimeStep-1]
           if(testCell.livingState){
             fill(gradient([255,0,0], [255, 0, 77], dims, z))
-            rect(snappedX, snappedY, cellSize, cellSize);
+            rect(snappedX, snappedY, cellSize, cellSize)
+          } else {
+            fill(255)
+            rect(snappedX, snappedY, cellSize, cellSize)
           }
         }
       } else {
@@ -149,22 +135,33 @@ function setup() {
   layerSlider = createSlider(1, 10)
   layerSlider.value(0)
   layerSlider.position(700, 100)
+  layerSlider.size(80)
   layerSliderText = createInput()
   layerSliderText.size(25)
-  layerSliderText.position(700, 80)
+  layerSliderText.position(795, 100)
   layerSliderText.value(layerSlider.value())
+  layerSliderTip = createP('View Layer:')
+  layerSliderTip.position(705, 70)
 
   timeLayersAmount = createSlider(10, 10)
   timeLayersAmount.position(700, 150)
   timeLayersAmount.value(10)
+  timeLayersAmount.size(80)
   timeLayersAmountText = createInput()
   timeLayersAmountText.size(25)
-  timeLayersAmountText.position(700, 130)
+  timeLayersAmountText.position(795, 150)
   timeLayersAmountText.value(timeLayersAmount.value())
-
-  console.log(gameBoard[0])
+  timeLayersAmountTip = createP('Amount of Z-Axis layers:')
+  timeLayersAmountTip.position(705, 120)
+  
   displayAllCheckbox = createCheckbox();
-  displayAllCheckbox.position(700, 200);
+  displayAllCheckbox.position(803, 190);
+  displayAllTip = createP('Display all layers?')
+  displayAllTip.position(705, 180)
+
+  configTip = createP('Push \'c\' to show/hide config')
+  configTip.position(701, 220)
+  
   randomCells(0.3)
   // console.log(gameBoard)
 }
@@ -179,8 +176,41 @@ function draw() {
   timeLayersAmount.input(updateTimeLayerTextBox);
   timeLayers = timeLayersAmount.value()
   renderBoard()
+  drawConfigBox()
   applyCellRules()
   // stepTime();
+}
+
+function drawConfigBox(){
+  if(config){
+    fill(0, 220);
+    rect(690,65,155,200);
+  }
+}
+
+function toggleConfig(){
+  config = !config
+  if(config){
+    layerSlider.show()
+    layerSliderText.show()
+    layerSliderTip.show()
+    timeLayersAmount.show()
+    timeLayersAmountText.show()
+    timeLayersAmountTip.show()
+    displayAllCheckbox.show()
+    displayAllTip.show()
+    drawConfigBox()
+  } else {
+    layerSlider.hide()
+    layerSliderText.hide()
+    layerSliderTip.hide()
+    timeLayersAmount.hide()
+    timeLayersAmountText.hide()
+    timeLayersAmountTip.hide()
+    displayAllCheckbox.hide()
+    displayAllTip.hide()
+    configTip.hide()
+  }
 }
 
 function applyCellRules(){
@@ -258,7 +288,7 @@ function updateViewLayerSlider(){
   if(!(valCheck > 47 && valCheck < 58)) {
     layerSliderText.value(inputVal.substring(0, inputVal.length-1))
   }
-  //if it's greater than 90, it isn't
+  // if it's greater than 90, it isn't
   if(inputVal > 90) {
     layerSlider.value(90)
     layerSliderText.value(90)
@@ -287,7 +317,7 @@ function updateTimeLayerSlider(){
   if(!(valCheck > 47 && valCheck < 58)) {
     timeLayersAmountText.value(inputVal.substring(0, inputVal.length-1))
   }
-  //if it's greater than 90, it isn't
+  // if it's greater than 90, it isn't
   if(inputVal > 90) {
     timeLayersAmount.value(90)
     timeLayersAmountText.value(90)
@@ -313,5 +343,8 @@ function keyPressed(e){
     }else{
       loop();
     }
+  }
+  if(key === 'c') {
+    toggleConfig()
   }
 }
