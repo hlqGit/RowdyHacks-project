@@ -140,6 +140,7 @@ function renderBoard(){
 function setup() {
   let canvas = createCanvas(displaySize, displaySize);
   canvas.parent('container');
+  document.getElementById('container').setAttribute("oncontextmenu", "return false")
   background(255);
 
   // Initializes config menu: View Layer Slider.
@@ -152,7 +153,7 @@ function setup() {
   layerSliderText.value(layerSlider.value())
 
   // Initializes config menu: Z-Axis Layers Slider.
-  timeLayersAmount = createSlider(10, 20, 10)
+  timeLayersAmount = createSlider(3, 20, 10)
   timeLayersAmount.position(935, 600)
   timeLayersAmount.size(150)
   timeLayersAmountText = createInput()
@@ -161,7 +162,7 @@ function setup() {
   timeLayersAmountText.value(timeLayersAmount.value())
 
   // Initializes config menu: Updates Per Second Slider.
-  updateTimerSlider = createSlider(0.25, 5, 1, 0.25)
+  updateTimerSlider = createSlider(0.25, 30, 12, 0.25)
   updateTimerSlider.position(935, 675)
   updateTimerSlider.size(150)
   updateTimerText = createInput()
@@ -320,7 +321,7 @@ function updateTimeLayerSlider(){
   for (let y = 0; y < dims; y++) {
     for (let x = 0; x < dims; x++) {
       while (gameBoard[y][x].length < timeLayers) {
-        gameBoard[y][x].push(new Cell(false, [255, 255, 255]));
+        gameBoard[y][x].push(new Cell(false, [255,255,255]));
       }
       while (gameBoard[y][x].length > timeLayers) {
         gameBoard[y][x].shift();
@@ -353,7 +354,7 @@ function checkInitialization() {
     for (let x = 0; x < dims; x++) {
       for (let z = 0; z < timeLayers; z++) {
         if (!(gameBoard[y][x][z] instanceof Cell)) {
-          gameBoard[y][x][z] = new Cell(false, [255, 255, 255]);
+          gameBoard[y][x][z] = new Cell(false, gradient([255,0,0], [0, 0, 255], timeLayers, z));
         }
       }
     }
@@ -363,8 +364,8 @@ function checkInitialization() {
 function userDraw(){
   if(mouseIsPressed && mouseX >= 0 && mouseX <= displaySize && mouseY >= 0 && mouseY <= displaySize){
     var cellState = gameBoard[Math.floor(mouseY/cellSize)][Math.floor(mouseX/cellSize)][currentTimeStep-1];
-
-    if(cellState.livingState){
+    
+    if(mouseButton == "right"){
       cellState.die();
     }else{
       cellState.resurrect();
@@ -373,7 +374,7 @@ function userDraw(){
     gameBoard[Math.floor(mouseY/cellSize)][Math.floor(mouseX/cellSize)][currentTimeStep-1] = cellState;
 
     // rect(mouseX, mouseY, 10, 10)
-    console.log(Math.floor(mouseY/cellSize), Math.floor(mouseX/cellSize), gameBoard[Math.floor(mouseY/cellSize)][Math.floor(mouseX/cellSize)][currentTimeStep-1])
+    // console.log(Math.floor(mouseY/cellSize), Math.floor(mouseX/cellSize), gameBoard[Math.floor(mouseY/cellSize)][Math.floor(mouseX/cellSize)][currentTimeStep-1])
     // renderBoard()
   }
 }
