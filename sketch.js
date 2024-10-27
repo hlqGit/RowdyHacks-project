@@ -74,17 +74,21 @@ class Cell {
   }
 }
 
+/* 
+Creates a gradient and returns a color from it. Given a starting color & ending color,
+steps in the gradient, and what step to get from the gradient.
+*/
 function gradient(startColor, endColor, totalGradientSteps, currentStep) {
-  // Calculate the interpolated color for each component
   const r = Math.floor(startColor[0] + ((endColor[0] - startColor[0]) * currentStep) / totalGradientSteps);
   const g = Math.floor(startColor[1] + ((endColor[1] - startColor[1]) * currentStep) / totalGradientSteps);
   const b = Math.floor(startColor[2] + ((endColor[2] - startColor[2]) * currentStep) / totalGradientSteps);
-
-  // Return the color as an array
   return [r, g, b];
 }
 
-// input, odds must be larger than what Math.random returns in order for a cell to be placed
+/* 
+Initializes the game board with cells. Randomly selects cells to be live and dead.
+Math.random must be larger than the variable 'odds' to place a living cell.
+*/
 function randomCells(odds){
   for(var y = 0; y < dims; y++){
     for(var x = 0; x < dims; x++){
@@ -105,26 +109,21 @@ function renderBoard(){
       var snappedX = cellSize * x;
       var snappedY = cellSize * y;
       if(displayAll){
-        for(var z = 0; z < dims; z++){
-          testCell = gameBoard[y][x][currentTimeStep-1]
+        for(var z = 0; z < timeLayers-1; z++){
+          testCell = gameBoard[y][x][z]
           if(testCell.livingState){
-            fill(gradient([255,0,0], [255, 0, 77], dims, z))
-            rect(snappedX, snappedY, cellSize, cellSize)
-          } else {
-            fill(255)
+            fill(gradient([255,0,0], [0, 0, 255], timeLayers, z))
             rect(snappedX, snappedY, cellSize, cellSize)
           }
         }
       } else {
         testCell = gameBoard[y][x][currentTimeStep-1]
         if(testCell.livingState){
-          //console.log(x, y, currentTimeStep, gameBoard[y][x][currentTimeStep])
           fill(gradient([255,0,0], [0, 0, 255], timeLayers, currentTimeStep))
           rect(snappedX, snappedY, cellSize, cellSize);
-        }  else {
-          //console.log(x, y, currentTimeStep, gameBoard[y][x][currentTimeStep])
-          fill(255)
-          rect(snappedX, snappedY, cellSize, cellSize);
+        }  else { // Uncomment else for white cells to have a border. *******
+          // fill(255)
+          // rect(snappedX, snappedY, cellSize, cellSize);
         }
       }
     }
@@ -133,8 +132,8 @@ function renderBoard(){
 
 function setup() {
   createCanvas(displaySize, displaySize);
-  console.log(dims)
-  frameRate(timeStep);
+
+  // Initializes config menu: View Layer Slider.
   layerSlider = createSlider(1, 10, 1)
   layerSlider.position(700, 100)
   layerSlider.size(80)
@@ -145,6 +144,7 @@ function setup() {
   layerSliderTip = createP('View Layer:')
   layerSliderTip.position(705, 70)
 
+  // Initializes config menu: Z-Axis Layers Slider.
   timeLayersAmount = createSlider(10, 20, 10)
   timeLayersAmount.position(700, 150)
   timeLayersAmount.size(80)
@@ -155,6 +155,7 @@ function setup() {
   timeLayersAmountTip = createP('Amount of Z-Axis layers:')
   timeLayersAmountTip.position(705, 120)
 
+  // Initializes config menu: Updates Per Second Slider.
   updateTimerSlider = createSlider(0.5, 5, 1, 0.5)
   updateTimerSlider.position(700, 200)
   updateTimerSlider.size(80)
@@ -165,22 +166,27 @@ function setup() {
   updateTimerTip = createP('Update Speed (Per Second):')
   updateTimerTip.position(700, 170)
   
+  // Initializes config menu: Display All Checkbox.
   displayAllCheckbox = createCheckbox();
   displayAllCheckbox.position(803, 232);
   displayAllTip = createP('Display all layers?')
   displayAllTip.position(705, 223)
 
+  // Initializes config menu: Tip For Hiding Config.
   configTip = createP('Push \'c\' to show/hide config')
   configTip.position(701, 250)
   
+  // Initializes each layer with random cells.
   randomCells(0.25)
-  // console.log(gameBoard)
 }
 
 function draw() {
   checkInitialization();
   background(255);
+
   displayAll = displayAllCheckbox.checked();
+
+  // .input methods: Runs if slider/textbox value has changed.
   layerSliderText.input(updateViewLayerSlider);
   layerSlider.input(updateViewLayerTextBox);
   currentTimeStep = layerSlider.value();
@@ -188,24 +194,30 @@ function draw() {
   timeLayersAmount.input(updateTimeLayerTextBox);
   updateTimerText.input(updateUpdateTimerSlider);
   updateTimerSlider.input(updateUpdateTimerText);
+  
+  // Switches framerate to its slider value
   timeStep = updateTimerSlider.value();
   frameRate(timeStep);
 
-  renderBoard()
-  drawConfigBox()
-  applyCellRules()
-  verifyTimeLayers()
-  // stepTime();
+  renderBoard() // Draws each live cell
+  drawConfigBox() // Overlay config box over board
+  applyCellRules() // Runs logic rules for cells & updates their values
+  verifyTimeLayers() // Makes sure (current z-axis layer) < (total z-axis layers)
+  // stepTime(); to be implemented?
 }
 
+// Makes sure (current z-axis layer) < (total z-axis layers)
 function verifyTimeLayers(){
   timeLayers = timeLayersAmount.value()
-  layerSlider.elt.max = timeLayers;
   if (layerSlider.value() > timeLayers) {
+    console.log(true)
     layerSlider.value(timeLayers);
+    layerSliderText.value(10)
   }
+  layerSlider.elt.max = timeLayers;
 }
 
+// Draws black transparent box behind config menu
 function drawConfigBox(){
   if(config){
     fill(0, 220);
@@ -244,6 +256,10 @@ function toggleConfig(){
   }
 }
 
+/*
+Add new cell rules here, default rules already implemented. If needed,
+They can be changed later too depending on new rules implemented.
+*/
 function applyCellRules(){
   for(y = 0; y < dims; y++){
     for(x = 0; x < dims; x++) {
@@ -267,6 +283,7 @@ function applyCellRules(){
   }
 }
 
+// Returns how many neighbors (not including diagonals) are living
 function countLiveNeighbors(y, x, z) {
   let liveNeighbors = 0;
   
@@ -280,58 +297,23 @@ function countLiveNeighbors(y, x, z) {
   return liveNeighbors;
 }
 
-function updateViewLayerSlider(){
-  let inputVal = layerSliderText.value()
-  let valCheck = inputVal.charCodeAt(inputVal.length -1)
-  if(inputVal.charCodeAt(0) == 48) {
-    layerSliderText.value(inputVal.substring(1))
-  }
 
-  // if it isn't a number, delete it
-  if(!(valCheck > 47 && valCheck < 58)) {
-    layerSliderText.value(inputVal.substring(0, inputVal.length-1))
-  }
-  // if it's greater than 90, it isn't
-  if(inputVal > 90) {
-    layerSlider.value(90)
-    layerSliderText.value(90)
-  } else {
-    layerSlider.value(layerSliderText.value())
-  }
-  inputVal = layerSliderText.value()
-  if(inputVal == "") {
-    layerSliderText.value(0)
-    layerSlider.value(layerSliderText.value())
-  }
+// Does not allow text box value of View Layer Slider to be changed.
+function updateViewLayerSlider(){
+  layerSliderText.value(layerSlider.value())
 }
 
+// If the View Layer Slider is changed, reflect change in text box.
 function updateViewLayerTextBox(){
   layerSliderText.value(layerSlider.value())
 }
 
+/*
+Adds the new cells to the Z-Axis. Does not allow text box value
+for the Amount of Z-Axis layers to be changed.
+*/
 function updateTimeLayerSlider(){
-  let inputVal = timeLayersAmountText.value()
-  let valCheck = inputVal.charCodeAt(inputVal.length -1)
-  if(inputVal.charCodeAt(0) == 48) {
-    timeLayersAmountText.value(inputVal.substring(1))
-  }
-
-  // if it isn't a number, delete it
-  if(!(valCheck > 47 && valCheck < 58)) {
-    timeLayersAmountText.value(inputVal.substring(0, inputVal.length-1))
-  }
-  // if it's greater than 90, it isn't
-  if(inputVal > 90) {
-    timeLayersAmount.value(90)
-    timeLayersAmountText.value(90)
-  } else {
-    timeLayersAmount.value(timeLayersAmountText.value())
-  }
-  inputVal = timeLayersAmountText.value()
-  if(inputVal == "") {
-    timeLayersAmountText.value(0)
-    timeLayersAmount.value(timeLayersAmountText.value())
-  }
+  timeLayersAmountText.value(timeLayersAmount.value())
   timeLayers = timeLayersAmount.value();
   for (let y = 0; y < dims; y++) {
     for (let x = 0; x < dims; x++) {
@@ -345,40 +327,25 @@ function updateTimeLayerSlider(){
   }
 }
 
+/* 
+If the slider is changed for the Amount of Z-Axis layers, 
+reflect change in text box.
+*/
 function updateTimeLayerTextBox(){
   timeLayersAmountText.value(timeLayersAmount.value())
 }
 
+// Does not allow text box value of Update Speed slider to be changed.
 function updateUpdateTimerSlider(){
-  let inputVal = updateTimerText.value()
-  let valCheck = inputVal.charCodeAt(inputVal.length -1)
-  if(inputVal.charCodeAt(0) == 48) {
-    updateTimerText.value(inputVal.substring(1))
-  }
-
-  // if it isn't a number, delete it
-  if(!(valCheck > 47 && valCheck < 58)) {
-    updateTimerText.value(inputVal.substring(0, inputVal.length-1))
-  }
-  // if it's greater than 90, it isn't
-  if(inputVal > 5) {
-    updateTimerSlider.value(5)
-    updateTimerText.value(5)
-  } else {
-    updateTimerSlider.value(updateTimerText.value())
-  }
-  inputVal = updateTimerText.value()
-  if(inputVal == "") {
-    updateTimerText.value(0)
-    updateTimerSlider.value(updateTimerText.value())
-  }
+  updateTimerText.value(updateTimerSlider.value())
   timeStep = updateTimerSlider.value()
 }
-
+// If the Update Speed slider is changed, reflect change in text box
 function updateUpdateTimerText(){
   updateTimerText.value(updateTimerSlider.value())
 }
 
+// Initializes uninitialized cells
 function checkInitialization() {
   for (let y = 0; y < dims; y++) {
     for (let x = 0; x < dims; x++) {
@@ -391,6 +358,7 @@ function checkInitialization() {
   }
 }
 
+// listens for pause (space) and toggle config (c)
 function keyPressed(e){
   if(keyCode == 32){
     paused = !paused;
